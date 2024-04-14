@@ -1,7 +1,6 @@
-6
-ooo-oo
-oooooo
-oooooo
-oooooo
-oooooo
-oooooo
+5
+oo-oo
+ooooo
+ooooo
+ooooo
+ooooo

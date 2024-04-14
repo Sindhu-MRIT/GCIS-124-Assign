@@ -1,6 +1,8 @@
 package peggame;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,6 +54,32 @@ public class SqaurePeggame implements PegGame
         }
         this.gamestate= GameState.NOT_STARTED;
         }
+        public SqaurePeggame(String absolutePath) 
+        {
+            try
+            {
+                FileReader fr = new FileReader(absolutePath); //extracting path of the selected file
+                BufferedReader reader = new BufferedReader(fr);
+                this.sizes = Integer.parseInt(reader.readLine()); //extracting the size of the board from the file
+                this.pboard = new boolean[this.sizes][this.sizes]; //creating peggboard of the above mentioned size
+        
+                for (int row = 0; row < this.sizes; row++) 
+                {
+                    String line = reader.readLine(); // reading file line by line
+                    for (int col = 0; col < this.sizes; col++) 
+                    { 
+                        this.pboard[row][col] = (line.charAt(col) == 'o'); //checking for peg
+                    }
+                }
+        
+                reader.close();
+                fr.close();
+                this.gamestate = GameState.NOT_STARTED; //displaying the gamestate
+            } catch (Exception e) 
+            {
+                e.printStackTrace();
+            }
+        }
         /*Let's include the Collection<Move> getPossibleMoves(),
          * List<Move> validity(), GameSate getGameState(), makeMove() and toString() and describe the its
          * attributes
@@ -66,7 +94,20 @@ public class SqaurePeggame implements PegGame
                     possiblemovement.addAll(validity(new Location(i, j)));
         return possiblemovement;
         }
+        public int getSize() {
+            return this.sizes;
+        }
     
+        public boolean getPegboardValue(Location location) 
+        {
+            int row = location.getRow(); //getting the row
+            int col = location.getCol(); // getting the column
+            if (row >= 0 && row < this.sizes && col >= 0 && col < this.sizes) 
+            {
+                return this.pboard[row][col]; // returning the peggboard of the paticular location only if the location entered is valid
+            }
+            return false;
+        }
         private List<Move> validity(Location loc)
         {
         List<Move> mov = new ArrayList<>();
@@ -121,11 +162,35 @@ public class SqaurePeggame implements PegGame
         return true;
         }
         }
+        public void saveGame(String fileName) 
+        {
+            try
+            {
+                BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
+                writer.write(String.valueOf(this.sizes)); //converting the int size to string
+                writer.write("");
+        
+                for (int row = 0; row < this.sizes; row++) 
+                {
+                    for (int col = 0; col < this.sizes; col++) //writing to the file to save the changes made after each move made by the user
+                    {
+                        writer.write(this.pboard[row][col] ? 'o' : '-');
+                    }
+                    writer.write("\n");
+                }
+            } catch (IOException e) 
+            {
+                System.out.println("Error saving the game due to wrong file"+e.getMessage());
+            }
+        }
     
         @Override
         public GameState getGameState()
         {
-        return gamestate;  //returning game state, it is a getter
+            if (this.gamestate == null) {
+                return GameState.NOT_STARTED; // returns a default state if gamestate is null
+            }
+            return this.gamestate;
         }
     
         @Override
@@ -164,6 +229,45 @@ public class SqaurePeggame implements PegGame
             else
                 gamestate= GameState.STALEMATE;
         }
+        }
+        public boolean isValidMove(Move move)
+         {
+            /* checking for the validity of the 
+            move made by the user on the GUI */
+            Location from = move.getFrom();
+            Location to = move.getTo();
+    
+            // checking if "from.getRow()","to.getRow()","to.getCol()","from.getCol()" are valid
+            if (from.getRow() < 0 || from.getRow() >= this.sizes || from.getCol() < 0 || from.getCol() >= this.sizes ||
+                to.getRow() < 0 || to.getRow() >= this.sizes || to.getCol() < 0 || to.getCol() >= this.sizes)
+                 {
+                return false;
+            }
+    
+            // checking for the peg at the respective row and column
+            if (!this.pboard[from.getRow()][from.getCol()] || this.pboard[to.getRow()][to.getCol()]) {
+                return false;  //if not wrong peg chosen
+            }
+    
+            // checking for the validity of the jump
+            int midr = Math.abs(from.getRow() - to.getRow());
+            int midc = Math.abs(from.getCol() - to.getCol());
+            if (midr == 2 && midc == 0)
+            {
+                int jumpRow = (from.getRow() + to.getRow()) / 2;  //extracting the middle rrow position being jumped over
+                if (this.pboard[jumpRow][from.getCol()])
+                 {
+                    return true;
+                }
+            } else if (midr == 0 && midc == 2) {
+                int jumpCol = (from.getCol() + to.getCol()) / 2; //extracting the middle col position being jumped over
+                if (this.pboard[from.getRow()][jumpCol]) 
+                {
+                    return true;
+                }
+            }
+    
+            return false;
         }
 
         private int remainingpegs()  //method to keep count of remaining pegs and returns remaing pegs left
@@ -238,7 +342,7 @@ public class SqaurePeggame implements PegGame
     }
     @Override
     public String toString()
-    {
+    {// tostring method to display board
     StringBuilder sb= new StringBuilder();
     for(int i=0;i<this.pboard.length;i++)
     {
